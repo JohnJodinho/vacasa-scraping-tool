@@ -334,27 +334,12 @@ def download_file(file_type):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# @app.route('/delete-file/<file_type>', methods=['POST'])
-# def delete_file(file_type):
-#     """
-#     Endpoint to delete a specific JSON or CSV file after downloading.
-#     :param file_type: 'json' or 'csv'
-#     """
-#     try:
-#         if file_type not in ['json', 'csv']:
-#             return jsonify({"error": "Invalid file type specified."}), 400
-
-#         # Locate and delete the file
-#         file_extension = f".{file_type}"
-#         for file_name in os.listdir(data_directory):
-#             if file_name.endswith(file_extension):
-#                 os.remove(os.path.join(data_directory, file_name))
-#                 return jsonify({"message": f"{file_type.upper()} file deleted successfully."}), 200
-
-#         return jsonify({"error": f"No {file_type} file found to delete."}), 404
-    # except Exception as e:
-    #     return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
+    # Ensure the data directory exists
     os.makedirs(data_directory, exist_ok=True)  # Ensure data directory exists
-    app.run(debug=True)
+    app.run(
+        host="0.0.0.0",  # Make the app accessible externally
+        port=5000,       # Set the desired port (can be adjusted based on deployment)
+        debug=False      # Disable debug mode for production
+    )
