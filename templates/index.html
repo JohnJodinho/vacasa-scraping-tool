@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vacasa Scraping Tool</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+  <div class="container">
+    <!-- Header Section -->
+    <header>
+      <h1>Vacasa Scraping Tool</h1>
+      <p>Extract the data you need with ease.</p>
+    </header>
+
+    <!-- Input Section -->
+    <main>
+      <div class="input-section">
+        <input
+          type="text"
+          id="scraping-url"
+          placeholder="Enter a Vacasa URL (e.g., https://www.vacasa.com/search?place=/...)"
+        />
+        <button id="start-scraping">Start Scraping</button>
+      </div>
+      <div class="loading" id="loading" style="display: none;">
+        <div class="spinner"></div>
+        <p>Scraping in progress...</p>
+      </div>
+      <div class="results" id="results">
+        <h2>Scraped Data</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Property Name</th>
+              <th>Price</th>
+              <th>Location</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Results will be dynamically inserted here -->
+          </tbody>
+        </table>
+        
+        <div class="export-buttons">
+          <button>Export as CSV</button>
+          <button>Export as JSON</button>
+        </div>
+      </div>
+      <div class="progress-bar-container">
+        <div class="progress-bar" id="progress-bar"></div>
+        <span id="progress-percentage">0%</span>
+      </div>
+      <!-- Log Box -->
+      <div id="log-box" style="display: none; border: 1px solid #ccc; border-radius: 10px; padding: 10px; margin-top: 20px; background-color: #f9f9f9; overflow-y: auto;">
+        <h3>Logs</h3>
+        <div id="log-messages" style="max-height: 400px; overflow-y: auto;"></div>
+      </div>
+      <div id="export-buttons" style="display: none; margin-top: 20px;">
+        <button id="export-json" class="export-btn" onclick="downloadFile('json')">Export to JSON</button>
+        <button id="export-csv" class="export-btn" onclick="downloadFile('csv')">Export to CSV</button>
+      </div>
+    </main>
+
+    <!-- Footer Section -->
+    <footer>
+      <p>Use this tool responsibly and in accordance with Vacasa's terms of use.</p>
+      <div class="footer-links">
+        <a href="#">Documentation</a>
+      </div>
+    </footer>
+  </div>
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
