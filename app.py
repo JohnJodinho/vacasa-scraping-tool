@@ -340,6 +340,6 @@ if __name__ == "__main__":
     os.makedirs(data_directory, exist_ok=True)  # Ensure data directory exists
     app.run(
         host="0.0.0.0",  # Make the app accessible externally
-        port=5000,       # Set the desired port (can be adjusted based on deployment)
+        port=8080,       # Set the desired port (can be adjusted based on deployment)
         debug=False      # Disable debug mode for production
     )
