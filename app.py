@@ -336,4 +336,5 @@ def download_file(file_type):
 
 
 if __name__ == "__main__":
-    app.run()
+    port = 8080
+    app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
