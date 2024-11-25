@@ -1,21 +1,41 @@
-FROM python:3.11-slim
+# Use an official Python runtime as the base image
+FROM python:3.11
 
-# Disable Python bytecode generation and enable unbuffered output for logging
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+# Suppress prompts during package installation
+ARG DEBIAN_FRONTEND=noninteractive
 
-# Set the working directory inside the container
+# Install system dependencies for Playwright and Chromium
+RUN apt-get update -q && \
+    apt-get install -y -qq --no-install-recommends \
+        xvfb \
+        libxcomposite1 \
+        libxdamage1 \
+        libatk1.0-0 \
+        libasound2 \
+        libdbus-1-3 \
+        libnspr4 \
+        libgbm1 \
+        libatk-bridge2.0-0 \
+        libcups2 \
+        libxkbcommon0 \
+        libatspi2.0-0 \
+        libnss3
+
+# Copy project files (including app.py and requirements.txt)
+COPY . /app
+
+# Set the working directory
 WORKDIR /app
 
-# Copy and install dependencies
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies
+RUN pip3 install -r requirements.txt && \
+    playwright install chromium
 
-# Copy the rest of the application code
-COPY . .
+# Set up the virtual display for Playwright
+ENV DISPLAY=:99
 
-# Expose the Flask default port (or a custom one if specified in your app)
+# Expose the port Gunicorn will listen on
 EXPOSE 8080
 
-# Command to run the application
-CMD ["python", "app.py"]
+# Run the app using Gunicorn
+CMD Xvfb :99 -screen 0 1024x768x16 & gunicorn --bind 0.0.0.0:8080 app:app
