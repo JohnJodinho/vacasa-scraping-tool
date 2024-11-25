@@ -12,15 +12,16 @@ def get_scraping_url():
 def fetch_and_parse_xml(url):
     with sync_playwright() as playwright:
         try:
-            browser = playwright.chromium.launch(headless=True)
+            browser = playwright.chromium.launch(headless=False)
             page = browser.new_page()
             page.goto(url, timeout=80000, wait_until="domcontentloaded")
             content = BeautifulSoup(page.content(), "html.parser")
             
-        except PlaywrightTimeoutError:
-            print(f"Timeout error while processing {vacasa_link}")
         except Exception as e:
             print(f"Unexpected error while processing {vacasa_link}: {e}")
+        except PlaywrightTimeoutError:
+            print(f"Timeout error while processing {vacasa_link}")
+        
         finally:
             return content
             browser.close()
