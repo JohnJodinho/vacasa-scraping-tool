@@ -36,11 +36,11 @@ RUN pip install --no-cache-dir -r requirements.txt && \
 # Copy application files into the container
 COPY . .
 
-# Expose port 8080
+# Expose the default Flask port
 EXPOSE 8080
 
 # Set the display for headless mode
 ENV DISPLAY=:99
 
 # Command to start the app
-CMD Xvfb :99 -screen 0 1024x768x16 & gunicorn -c gunicorn_config.py app:app
+CMD Xvfb :99 -screen 0 1024x768x16 & python app.py
