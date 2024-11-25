@@ -197,9 +197,9 @@ def process_data():
     custom_print(f"Extracted unit ids...{vacasa_unitIds}")
     app.logger.info(f"Extracted unit ids...{vacasa_unitIds}")
     name = get_location_name()
-    custom_print(f"Location name: {name}")
+    # custom_print(f"Location name: {name}")
     all_lats_and_longs = get_lat_long(unit_ids_list=vacasa_unitIds)
-    custom_print(f"Extracted latitudes and longitudes...{all_lats_and_longs}")
+    # custom_print(f"Extracted latitudes and longitudes...{all_lats_and_longs}")
     # json_file_name = f"location_extracted_data/{location_name}_properties.json"
     os.makedirs("location_extracted_data", exist_ok=True)
     # Load existing data if available
