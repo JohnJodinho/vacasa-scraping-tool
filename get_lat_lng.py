@@ -33,9 +33,9 @@ def get_lat_long(unit_ids_list: list):
             response_data = response.json()
             return response_data
             
-        except json.JSONDecodeError:
-            print("Failed to decode JSON response.")
-            return "Failed to decode JSON response."
+        except Exception as e:
+            print(f"Failed to decode JSON response.{e}")
+            return f"Failed to decode JSON response.{response.text}, {response.status_code}, {response} {e}"
     else:
         print(f"Request failed with status code: {response.status_code}")
         return f"Failed with status code: {response.status_code}"
