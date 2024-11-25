@@ -35,7 +35,7 @@ status = 0
 LOCATION_NAME = ""
 log_messages = []
 data_directory = "location_extracted_data"  # Folder to store data files
-
+os.makedirs(data_directory, exist_ok=True)  # Ensure data directory exists
 logging.basicConfig(
     filename="app.log",  # Log file in the root directory
     level=logging.DEBUG,  # Set the logging level (e.g., DEBUG, INFO, WARNING, ERROR, CRITICAL)
@@ -336,10 +336,4 @@ def download_file(file_type):
 
 
 if __name__ == "__main__":
-    # Ensure the data directory exists
-    os.makedirs(data_directory, exist_ok=True)  # Ensure data directory exists
-    app.run(
-        host="0.0.0.0",  # Make the app accessible externally
-        port=8080,       # Set the desired port (can be adjusted based on deployment)
-        debug=False      # Disable debug mode for production
-    )
+    app.run()
