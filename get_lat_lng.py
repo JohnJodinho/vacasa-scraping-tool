@@ -35,9 +35,9 @@ def get_lat_long(unit_ids_list: list):
             
         except json.JSONDecodeError:
             print("Failed to decode JSON response.")
-            return None
+            return "Failed to decode JSON response."
     else:
         print(f"Request failed with status code: {response.status_code}")
-        return None
+        return f"Failed with status code: {response.status_code}"
 
 
