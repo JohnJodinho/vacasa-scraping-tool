@@ -1,10 +1,10 @@
-# Use an official Python runtime as the base image
+# Base image with Python
 FROM python:3.11
 
-# Suppress prompts during package installation
+# Set non-interactive mode for apt-get
 ARG DEBIAN_FRONTEND=noninteractive
 
-# Install system dependencies for Playwright and Chromium
+# Install dependencies required for Playwright and Xvfb
 RUN apt-get update -q && \
     apt-get install -y -qq --no-install-recommends \
         xvfb \
@@ -19,23 +19,28 @@ RUN apt-get update -q && \
         libcups2 \
         libxkbcommon0 \
         libatspi2.0-0 \
-        libnss3
-
-# Copy project files (including app.py and requirements.txt)
-COPY . /app
+        libnss3 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Set the working directory
 WORKDIR /app
 
-# Install Python dependencies
-RUN pip3 install -r requirements.txt && \
+# Copy the requirements file
+COPY requirements.txt .
+
+# Install Python dependencies and Playwright Chromium
+RUN pip install --no-cache-dir -r requirements.txt && \
     playwright install chromium
 
-# Set up the virtual display for Playwright
-ENV DISPLAY=:99
+# Copy application files into the container
+COPY . .
 
-# Expose the port Gunicorn will listen on
+# Expose port 8080
 EXPOSE 8080
 
-# Run the app using Gunicorn
-CMD Xvfb :99 -screen 0 1024x768x16 & gunicorn --bind 0.0.0.0:8080 app:app
+# Set the display for headless mode
+ENV DISPLAY=:99
+
+# Command to start the app
+CMD Xvfb :99 -screen 0 1024x768x16 & gunicorn -c gunicorn_config.py app:app
