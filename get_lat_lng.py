@@ -1,5 +1,7 @@
 import requests
 import json
+import gzip
+import zlib
 
 def get_lat_long(unit_ids_list: list):
     url = "https://www.vacasa.com/guest-com-api/get-locations"
@@ -30,7 +32,13 @@ def get_lat_long(unit_ids_list: list):
     # Save response to a JSON file
     if response.status_code == 200:
         try:
-            response_data = response.json()
+            if response.headers.get("Content-Encoding") == "gzip":
+                response_data = gzip.decompress(response.content).decode("utf-8")
+            elif response.headers.get("Content-Encoding") == "deflate":
+                response_data = zlib.decompress(response.content, zlib.MAX_WBITS | 16).decode("utf-8")
+            else:
+                response_data = response.json()
+            
             return response_data
             
         except Exception as e:
