@@ -194,7 +194,7 @@ def process_data():
     all_data = []
 
     vacasa_unitIds = extract_unit_ids()
-    custom_print(f"Extracted unit ids...{vacasa_unitIds}")
+    # custom_print(f"Extracted unit ids...{vacasa_unitIds}")
     app.logger.info(f"Extracted unit ids...{vacasa_unitIds}")
     name = get_location_name()
     # custom_print(f"Location name: {name}")
