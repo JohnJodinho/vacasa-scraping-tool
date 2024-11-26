@@ -23,8 +23,28 @@ document.getElementById('start-scraping').addEventListener('click', () => {
       .catch(err => console.error('Error:', err));
   });
   
+  // Make the header clickable to refresh the page and reset fields
+document.getElementById('header-title').addEventListener('click', () => {
+  // Clear the logs
+  const logMessages = document.getElementById('log-messages');
+  logMessages.innerHTML = ''; // Clear all log messages
+  lastLogLength = 0; // Reset the log length tracker
+
+  // Clear the URL input box
+  const urlInput = document.getElementById('scraping-url');
+  urlInput.value = ''; // Reset the input value
+
+  // Refresh the page by navigating to the root URL
+  window.location.href = '/';
+});
+
+
   document.getElementById('start-scraping').addEventListener('click', () => {
     const url = document.getElementById('scraping-url').value;
+    // Clear the logs when the Start Scraping button is clicked
+    const logMessages = document.getElementById('log-messages');
+    logMessages.innerHTML = ''; // Clear all log messages
+    lastLogLength = 0; // Reset the log length tracker
     if (!url) {
       alert('Please enter a URL.');
       return;
