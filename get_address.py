@@ -3,6 +3,7 @@ from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
 import time
 import random
+from flags import stop_scraping
 
 # List of user agents to randomize requests
 USER_AGENTS = [
@@ -25,6 +26,9 @@ def get_address_from_coords(latitude, longitude, language="en"):
     
     while True:
         try:
+            if stop_scraping.is_set():
+                print("Scraping stopped during process!")
+                return  # Exit the task
             # Try to get the geocode data
             geolocator = Nominatim(user_agent=user_agent)
             # Set up a rate limiter to ensure requests are spaced out
