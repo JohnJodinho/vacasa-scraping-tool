@@ -402,7 +402,6 @@ def download_file(file_type):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-
 if __name__ == "__main__":
     port = 8080
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
