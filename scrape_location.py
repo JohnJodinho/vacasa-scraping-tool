@@ -9,12 +9,17 @@ from bs4 import BeautifulSoup
 from get_csv import save_to_csv
 import os 
 from os import path
+from flags import stop_scraping
 
 
 
 def get_coordinates(check_id, all_lat_long):
     for item in all_lat_long:
+        if stop_scraping.is_set():
+            print("Scraping stopped during process!")
+            return  # Exit the task
         if item["unit_id"] == check_id:
+
             return item["lat"], item["lng"]
     return (None, None)  # If no matching id is found
 
@@ -29,6 +34,9 @@ def extract_bedrooms_baths(soup):
     
     for feature in main_div.find_all("span", class_="core-feature"):
         text = feature.get_text(strip=True).lower()
+        if stop_scraping.is_set():
+                    print("Scraping stopped during process!")
+                    return  # Exit the task
         try:
             if 'bedroom' in text:
                 bedroom = float(text.strip().split()[0])
@@ -67,6 +75,9 @@ def extract_property_data(unit_id, lat, lng, location_name):
                 page = browser.new_page()
                 page.goto(url, timeout=80000, wait_until="domcontentloaded")
                 time.sleep(2)
+                if stop_scraping.is_set():
+                    print("Scraping stopped during process!")
+                    return  # Exit the task
                 # page.wait_for_load_state("load", timeout=60000)
                 # Extract property name
                 page.wait_for_selector("h3.unit-rate", timeout=60000)
@@ -146,5 +157,4 @@ def extract_property_data(unit_id, lat, lng, location_name):
             json.dump(properties, f, indent=4)
 
     return property_data
-
 
