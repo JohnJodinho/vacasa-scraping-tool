@@ -194,7 +194,7 @@ def process_data():
     all_data = []
 
     vacasa_unitIds = extract_unit_ids()
-    # custom_print(f"Extracted unit ids...{vacasa_unitIds}")
+    custom_print(f"Extracted unit ids...{vacasa_unitIds}")
     app.logger.info(f"Extracted unit ids...{vacasa_unitIds}")
     name = get_location_name()
     # custom_print(f"Location name: {name}")
@@ -217,12 +217,16 @@ def process_data():
                 if dt["VACASA_LINK"] == f"https://www.vacasa.com/unit/{id_}":
                     is_new = False
         if is_new:
-            
-            status = int((vacasa_unitIds.index(id_)+1)/len(vacasa_unitIds)*100)
-            lat, lng = get_coordinates(id_, all_lats_and_longs)
-            extract_property_data(id_, lat, lng, name)
-            custom_print(f"Extracted data from property with id {id_} in {name} ({state}/{len(vacasa_unitIds)})...")
-            app.logger.info(f"Extracted data from property with id {id_} in {name} ({state}/{len(vacasa_unitIds)})...")
+            try:
+                status = int((vacasa_unitIds.index(id_)+1)/len(vacasa_unitIds)*100)
+                lat, lng = get_coordinates(id_, all_lats_and_longs)
+                extract_property_data(id_, lat, lng, name)
+                custom_print(f"Extracted data from property with id {id_} in {name} ({state}/{len(vacasa_unitIds)})...")
+                app.logger.info(f"Extracted data from property with id {id_} in {name} ({state}/{len(vacasa_unitIds)})...")
+            except Exception as e:
+                custom_print(f"Error extracting data from property with id {id_}: {e}")
+                app.logger.error(f"Error extracting data from property with id {id_}: {e}")
+                continue
 
     custom_print(f"Data extraction for {name} completed.")
     app.logger.info(f"Data extraction for {name} completed.")
@@ -249,7 +253,9 @@ def process_data():
 @app.route('/')
 def home():
     """Renders the main scraping tool UI."""
+    global log_messages
     try:
+        log_messages.clear()
         all_files = os.listdir("location_extracted_data")
         if len(all_files) != 0:
             for file in all_files:
@@ -266,11 +272,13 @@ def start_scraping():
     API endpoint to trigger the scraping process.
     Expects JSON data with a URL or location name.
     """
+    global log_messages
     data = request.get_json()
     if not data or 'url' not in data:
         return jsonify({"error": "Invalid request. URL is required."}), 400
 
     try:
+        log_messages.clear()
         all_files = os.listdir("location_extracted_data")
         if len(all_files) != 0:
             for file in all_files:
@@ -285,7 +293,7 @@ def start_scraping():
         return jsonify({"message": "Scraping completed successfully."}), 200
     except Exception as e:
         print(f"Error during scraping: {e}")
-        return jsonify({"error": "An error occurred during scraping."}), 500
+        return jsonify({"error": f"An error occurred during scraping:{e}"}), 500
 
 @app.route('/check_status', methods=['GET'])
 def check_status():
