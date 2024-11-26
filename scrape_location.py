@@ -120,7 +120,10 @@ def extract_property_data(unit_id, lat, lng, location_name):
         
         # Pricing
         pricing = soup.select_one("h3.unit-rate")
-        property_data["PRICING"] = float(pricing.text.strip().replace("$", "")) if pricing else 0
+        
+        property_data["PRICING"] = (
+            float(pricing.text.strip().replace("$", "").replace(",", "")) if pricing else 0
+        )
         
         # Amenities
         amenities = soup.select("div.row.featured-amenities.py-3 h3.featured-amenity")
@@ -144,43 +147,4 @@ def extract_property_data(unit_id, lat, lng, location_name):
 
     return property_data
 
-# if __name__ == "__main__":
-#     all_data = []
 
-
-#     vacasa_unitIds = extract_unit_ids()
-#     print(f"Extracted unit ids...{vacasa_unitIds}")
-#     name = get_location_name()
-#     all_lats_and_longs = get_lat_long(unit_ids_list=vacasa_unitIds)
-#     # print(all_lats_and_longs)
-#     try:
-#         with open(f"{name}_properties.json", "r") as f:
-#             all_data = json.load(f)
-#     except FileNotFoundError:
-#         pass
-
-
-#     for id_ in vacasa_unitIds:
-#         is_new = True
-#         if all_data:
-#             for dt in all_data:
-#                 if dt["VACASA_LINK"] == f"https://www.vacasa.com/unit/{id_}":
-#                     is_new = False
-#         if is_new:
-#             print(f"Extracted data from property with id {id_} in {name}...")
-#             lat, lng  = get_coordinates(id_, all_lats_and_longs)
-#             # print(lat, lng)
-#             extract_property_data(id_, lat, lng, name)
-#     print(f"Data extraction for {name} completed.")
-#     print("saving to csv...")
-#     save_to_csv(name)
-#     print("Data successfully saved to CSV file.")
-
-#     file_path = f"{name}_properties.json"
-#     print("Cleaning up... ")
-#     # Check if the file exists before attempting to delete it
-#     if os.path.exists(file_path):
-#         os.remove(file_path)
-#         print("Done!")
-#     else:
-#         pass
