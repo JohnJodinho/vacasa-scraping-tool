@@ -25,6 +25,8 @@ from os import path
 from scrape_location import *
 from get_all_locations import *
 import sys
+import threading
+import time
 
 
 
@@ -34,6 +36,9 @@ app = Flask(__name__)
 status = 0
 LOCATION_NAME = ""
 log_messages = []
+scraping_thread = None
+stop_scraping = threading.Event()  # Event to signal scraping stop
+
 data_directory = "location_extracted_data"  # Folder to store data files
 os.makedirs(data_directory, exist_ok=True)  # Ensure data directory exists
 logging.basicConfig(
@@ -252,19 +257,72 @@ def process_data():
 
 @app.route('/')
 def home():
-    """Renders the main scraping tool UI."""
-    global log_messages
+    """Renders the main scraping tool UI and stops any ongoing scraping."""
+    global log_messages, scraping_thread, stop_scraping
+
+    # Signal the thread to stop and wait for it to finish
+    if scraping_thread and scraping_thread.is_alive():
+        stop_scraping.set()  # Signal the thread to stop
+        scraping_thread.join()  # Wait for the thread to finish
+
+    # Clear logs and files
     try:
         log_messages.clear()
         all_files = os.listdir("location_extracted_data")
-        if len(all_files) != 0:
-            for file in all_files:
-                file_path = os.path.join("location_extracted_data", file)
-                os.remove(file_path)
+        for file in all_files:
+            file_path = os.path.join("location_extracted_data", file)
+            os.remove(file_path)
     except Exception as e:
-        print(f"Error: {e}")
-        
+        print(f"Error during cleanup: {e}")
+
+    # Reset the stop flag for future scraping
+    stop_scraping.clear()
+
     return render_template('index.html')
+
+
+@app.route('/start-scraping', methods=['POST'])
+def start_scraping():
+    """
+    API endpoint to trigger the scraping process.
+    Expects JSON data with a URL or location name.
+    """
+    global log_messages, scraping_thread, stop_scraping
+
+    data = request.get_json()
+    if not data or 'url' not in data:
+        return jsonify({"error": "Invalid request. URL is required."}), 400
+
+    url = data['url']
+
+    # Start a new scraping thread
+    if scraping_thread and scraping_thread.is_alive():
+        return jsonify({"error": "Scraping is already in progress."}), 400
+
+    def scraping_task():
+        global log_messages
+        try:
+            log_messages.clear()
+            all_files = os.listdir("location_extracted_data")
+            if len(all_files) != 0:
+                for file in all_files:
+                    file_path = os.path.join("location_extracted_data", file)
+                    os.remove(file_path)
+        except Exception as e:
+            print(f"Error: {e}")
+
+        # Simulate scraping process
+        try:
+            process_data()
+            return jsonify({"message": "Scraping completed successfully."}), 200
+        except Exception as e:
+            print(f"Error during scraping: {e}")
+            return jsonify({"error": f"An error occurred during scraping:{e}"}), 500
+
+    scraping_thread = threading.Thread(target=scraping_task)
+    scraping_thread.start()
+
+    return jsonify({"message": "Scraping started."}), 200
 
 @app.route('/start-scraping', methods=['POST'])
 def start_scraping():
@@ -347,4 +405,4 @@ def download_file(file_type):
 
 if __name__ == "__main__":
     port = 8080
-    app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False)
+    app.run(debug=True)
