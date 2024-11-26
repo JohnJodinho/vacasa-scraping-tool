@@ -27,6 +27,7 @@ from get_all_locations import *
 import sys
 import threading
 import time
+from flags import stop_scraping
 
 
 
@@ -37,7 +38,8 @@ status = 0
 LOCATION_NAME = ""
 log_messages = []
 scraping_thread = None
-stop_scraping = threading.Event()  # Event to signal scraping stop
+SCRAPING_URL = ""
+
 
 data_directory = "location_extracted_data"  # Folder to store data files
 os.makedirs(data_directory, exist_ok=True)  # Ensure data directory exists
@@ -199,7 +201,7 @@ def process_data():
     all_data = []
 
     vacasa_unitIds = extract_unit_ids()
-    custom_print(f"Extracted unit ids...{vacasa_unitIds}")
+    # custom_print(f"Extracted unit ids...{vacasa_unitIds}")
     app.logger.info(f"Extracted unit ids...{vacasa_unitIds}")
     name = get_location_name()
     # custom_print(f"Location name: {name}")
@@ -223,6 +225,9 @@ def process_data():
                     is_new = False
         if is_new:
             try:
+                if stop_scraping.is_set():
+                    custom_print("Scraping stopped during process!")
+                    return  # Exit the task
                 status = int((vacasa_unitIds.index(id_)+1)/len(vacasa_unitIds)*100)
                 lat, lng = get_coordinates(id_, all_lats_and_longs)
                 extract_property_data(id_, lat, lng, name)
@@ -242,28 +247,18 @@ def process_data():
     app.logger.info("Scraping completed!")
 
     custom_print("Downloading...")
-    # Clean up temporary JSON file
-    # file_path = f"{name}_properties.json"
-    # custom_print("Cleaning up...")
-    # app.logger.info("Cleaning up...")
-    # if os.path.exists(file_path):
-    #     os.remove(file_path)
-    #     custom_print("Done!")
-    #     app.logger.info("Done!")
-    # else:
-    #     custom_print("No temporary file to clean up.")
-    #     app.logger.warning("No temporary file to clean up.")
+   
 
 
 @app.route('/')
 def home():
     """Renders the main scraping tool UI and stops any ongoing scraping."""
-    global log_messages, scraping_thread, stop_scraping
+    global log_messages, scraping_thread
 
     # Signal the thread to stop and wait for it to finish
     if scraping_thread and scraping_thread.is_alive():
         stop_scraping.set()  # Signal the thread to stop
-        scraping_thread.join()  # Wait for the thread to finish
+        
 
     # Clear logs and files
     try:
@@ -287,13 +282,14 @@ def start_scraping():
     API endpoint to trigger the scraping process.
     Expects JSON data with a URL or location name.
     """
-    global log_messages, scraping_thread, stop_scraping
+    global log_messages, scraping_thread
 
     data = request.get_json()
     if not data or 'url' not in data:
         return jsonify({"error": "Invalid request. URL is required."}), 400
 
     url = data['url']
+    set_scraping_url(url)
 
     # Start a new scraping thread
     if scraping_thread and scraping_thread.is_alive():
@@ -319,39 +315,12 @@ def start_scraping():
             print(f"Error during scraping: {e}")
             return jsonify({"error": f"An error occurred during scraping:{e}"}), 500
 
+    stop_scraping.clear()  # Ensure the flag is reset
     scraping_thread = threading.Thread(target=scraping_task)
     scraping_thread.start()
 
     return jsonify({"message": "Scraping started."}), 200
 
-@app.route('/start-scraping', methods=['POST'])
-def start_scraping():
-    """
-    API endpoint to trigger the scraping process.
-    Expects JSON data with a URL or location name.
-    """
-    global log_messages
-    data = request.get_json()
-    if not data or 'url' not in data:
-        return jsonify({"error": "Invalid request. URL is required."}), 400
-
-    try:
-        log_messages.clear()
-        all_files = os.listdir("location_extracted_data")
-        if len(all_files) != 0:
-            for file in all_files:
-                file_path = os.path.join("location_extracted_data", file)
-                os.remove(file_path)
-    except Exception as e:
-        print(f"Error: {e}")
-
-    # Simulate scraping process
-    try:
-        process_data()
-        return jsonify({"message": "Scraping completed successfully."}), 200
-    except Exception as e:
-        print(f"Error during scraping: {e}")
-        return jsonify({"error": f"An error occurred during scraping:{e}"}), 500
 
 @app.route('/check_status', methods=['GET'])
 def check_status():
@@ -401,6 +370,7 @@ def download_file(file_type):
         return jsonify({"error": f"No {file_type} file found."}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     port = 8080
