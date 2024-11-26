@@ -99,30 +99,58 @@ document.getElementById('header-title').addEventListener('click', () => {
   const progressInterval = setInterval(updateProgressBar, 2000);
   let lastLogLength = 0;
   
-  function fetchLogs() {
-    fetch('/get-logs')
-      .then(response => response.json())
-      .then(logs => {
-        const logBox = document.getElementById('log-box');
-        const logMessages = document.getElementById('log-messages');
+  // function fetchLogs() {
+  //   fetch('/get-logs')
+  //     .then(response => response.json())
+  //     .then(logs => {
+  //       const logBox = document.getElementById('log-box');
+  //       const logMessages = document.getElementById('log-messages');
   
-        // Make the log box visible
-        if (logs.length > 0 && logBox.style.display === 'none') {
-          logBox.style.display = 'block';
-        }
+  //       // Make the log box visible
+  //       if (logs.length > 0 && logBox.style.display === 'none') {
+  //         logBox.style.display = 'block';
+  //       }
   
-        // Append only new messages
-        for (let i = lastLogLength; i < logs.length; i++) {
+  //       // Append only new messages
+  //       for (let i = lastLogLength; i < logs.length; i++) {
+  //         const newMessage = document.createElement('div');
+  //         newMessage.textContent = logs[i];
+  //         logMessages.appendChild(newMessage);
+  //       }
+  
+  //       // Update the last log length
+  //       lastLogLength = logs.length;
+  //     })
+  //     .catch(err => console.error('Error fetching logs:', err));
+  // }
+
+let existingLogs = new Set(); // Store unique logs
+
+function fetchLogs() {
+  fetch('/get-logs')
+    .then(response => response.json())
+    .then(logs => {
+      const logBox = document.getElementById('log-box');
+      const logMessages = document.getElementById('log-messages');
+
+      // Make the log box visible if logs are available
+      if (logs.length > 0 && logBox.style.display === 'none') {
+        logBox.style.display = 'block';
+      }
+
+      // Append only new messages
+      logs.forEach(log => {
+        if (!existingLogs.has(log)) { // Check if the log is new
           const newMessage = document.createElement('div');
-          newMessage.textContent = logs[i];
+          newMessage.textContent = log;
           logMessages.appendChild(newMessage);
+          existingLogs.add(log); // Add to the set of existing logs
         }
-  
-        // Update the last log length
-        lastLogLength = logs.length;
-      })
-      .catch(err => console.error('Error fetching logs:', err));
-  }
+      });
+    })
+    .catch(err => console.error('Error fetching logs:', err));
+}
+
   
   function downloadFile(fileType) {
     fetch(`/download-file/${fileType}`)
