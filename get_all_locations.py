@@ -11,6 +11,7 @@ def get_scraping_url():
 # Function to fetch and parse XML
 def fetch_and_parse_xml(url):
     with sync_playwright() as playwright:
+        content = None
         try:
             browser = playwright.chromium.launch(headless=True)
             page = browser.new_page()
