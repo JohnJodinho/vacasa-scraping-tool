@@ -36,6 +36,19 @@
   header p {
     color: #666;
   }
+
+  #header-title {
+    cursor: pointer;
+    transition: transform 0.2s ease, color 0.2s ease;
+    font-size: 2rem;
+    color: #4CAF50;
+  }
+  
+  #header-title:hover {
+    transform: scale(1.1);
+    color: #0073e6; /* Change color on hover */
+  }
+  
   
   /* Input Section */
   .input-section {
