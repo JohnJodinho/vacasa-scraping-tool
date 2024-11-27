@@ -1,17 +1,21 @@
 
 let existingLogs = new Set(); // Store unique logs
 let lastLogLength = 0;
-
+const progressBar = document.getElementById('progress-bar');
+const progressPercentage = document.getElementById('progress-percentage');
+let stageCheck = 0;
 
 // Function to clear logs
 function clearLogsAndUrl() {
+  const stat = 0;
   existingLogs.clear();
   // Clear the logs
   const logMessages = document.getElementById('log-messages');
   logMessages.innerHTML = ''; // Clear all log messages
   lastLogLength = 0; // Reset the log length tracker
-
- 
+  progressBar.style.width = `${stat}%`;
+  progressPercentage.textContent = `${stat}%`;
+  let stageCheck = 0;
 }
   
   // Make the header clickable to refresh the page and reset fields
@@ -57,8 +61,7 @@ function updateProgressBar() {
     .then(response => response.json())
     .then(data => {
       const status = data.status; // Assuming this is a percentage (e.g., 45 for 45%)
-      const progressBar = document.getElementById('progress-bar');
-      const progressPercentage = document.getElementById('progress-percentage');
+      
 
       // Update progress bar width and percentage text
       progressBar.style.width = `${status}%`;
@@ -67,17 +70,16 @@ function updateProgressBar() {
       // If scraping is complete, stop updating
       if (status >= 100) {
         clearInterval(progressInterval);
-
-        // Delay the alert and exportButtons display by 3 seconds
-        setTimeout(() => {
-          alert("Scraping completed!");
-          exportButtons.style.display = 'flex';
-        }, 3000);
       }
     })
     .catch(err => console.error('Error fetching progress:', err));
 }
   
+// Set interval to periodically fetch progress every 2 seconds
+const progressInterval = setInterval(updateProgressBar, 2000);
+
+
+
 
 function fetchLogs() {
   fetch('/get-logs')
@@ -98,6 +100,13 @@ function fetchLogs() {
           newMessage.textContent = log;
           logMessages.appendChild(newMessage);
           existingLogs.add(log); // Add to the set of existing logs
+        }
+
+        if (existingLogs.has("Downloading...") && stageCheck == 0) {
+          alert("Scraping completed!");
+          const exportButtons = document.getElementById('export-buttons');
+          exportButtons.style.display = 'flex';
+          stageCheck = 1;
         }
       });
     })
@@ -123,9 +132,8 @@ function downloadFile(fileType) {
     .catch(err => console.error(err));
 }
 
-// Set interval to periodically fetch progress every 2 seconds
-const progressInterval = setInterval(updateProgressBar, 2000);
-
 // Poll the server every 2 seconds
 setInterval(fetchLogs, 2000);
+
+
   
