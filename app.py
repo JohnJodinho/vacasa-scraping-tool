@@ -278,23 +278,24 @@ def home():
 
 def scraping_task():
     global log_messages
-    try:
-        log_messages.clear()
-        all_files = os.listdir("location_extracted_data")
-        if len(all_files) != 0:
-            for file in all_files:
-                file_path = os.path.join("location_extracted_data", file)
-                os.remove(file_path)
-    except Exception as e:
-        print(f"Error: {e}")
+    with app.app_context():
+        try:
+            log_messages.clear()
+            all_files = os.listdir("location_extracted_data")
+            if len(all_files) != 0:
+                for file in all_files:
+                    file_path = os.path.join("location_extracted_data", file)
+                    os.remove(file_path)
+        except Exception as e:
+            print(f"Error: {e}")
 
-    # Simulate scraping process
-    try:
-        process_data()
-        return jsonify({"message": "Scraping completed successfully."}), 200
-    except Exception as e:
-        print(f"Error during scraping: {e}")
-        return jsonify({"error": f"An error occurred during scraping:{e}"}), 500
+        # Simulate scraping process
+        try:
+            process_data()
+            return jsonify({"message": "Scraping completed successfully."}), 200
+        except Exception as e:
+            print(f"Error during scraping: {e}")
+            return jsonify({"error": f"An error occurred during scraping: {e}"}), 500
 
 @app.route('/start-scraping', methods=['POST'])
 def start_scraping():
