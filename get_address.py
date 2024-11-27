@@ -1,3 +1,4 @@
+
 from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
 import time
@@ -120,7 +121,7 @@ def get_address_from_coords(latitude, longitude, language="en"):
         try:
             # Reverse geocode
             location = geocode((latitude, longitude), language=language).raw
-            print(f"location as raw: {location}")
+            
             # Safely extract address components
             address_info = location.get('address', {})
             street_number = address_info.get('streetNumber', default_value)
@@ -142,7 +143,7 @@ def get_address_from_coords(latitude, longitude, language="en"):
             attempt += 1
             if attempt > max_retries:
                 print(f"Error: Failed to get address after {max_retries} retries. {e}")
-                return {"Error": f"unable to get address of property due to error: {e}"} 
+                return None
 
             delay = base_delay * (2 ** (attempt - 1))  # Exponential backoff
             print(f"Attempt {attempt} failed with user agent '{user_agent}'. Retrying in {delay} seconds...")
@@ -152,3 +153,4 @@ def get_address_from_coords(latitude, longitude, language="en"):
             user_agent = random.choice(USER_AGENTS)
             geolocator = AzureMaps(subscription_key=subscription_key, user_agent=user_agent)
             geocode = RateLimiter(geolocator.reverse, min_delay_seconds=2)
+
