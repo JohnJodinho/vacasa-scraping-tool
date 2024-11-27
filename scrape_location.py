@@ -96,6 +96,8 @@ def extract_property_data(unit_id, lat, lng, location_name):
         
         if lat and lng:
             address = get_address_from_coords(lat, lng)
+            if isinstance(address, dict):
+                return address
             property_data["ADDRESS"] = address
 
         # Extract reviews and ratings
@@ -157,4 +159,3 @@ def extract_property_data(unit_id, lat, lng, location_name):
             json.dump(properties, f, indent=4)
 
     return property_data
-
