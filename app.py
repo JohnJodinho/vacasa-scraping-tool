@@ -228,9 +228,10 @@ def process_data():
                 if stop_scraping.is_set():
                     custom_print("Scraping stopped during process!")
                     return  # Exit the task
-                status = int((vacasa_unitIds.index(id_)+1)/len(vacasa_unitIds)*100)
+                
                 lat, lng = get_coordinates(id_, all_lats_and_longs)
                 extract_property_data(id_, lat, lng, name)
+                status = int((vacasa_unitIds.index(id_)+1)/len(vacasa_unitIds)*100)
                 custom_print(f"Extracted data from property with id {id_} in {name} ({state}/{len(vacasa_unitIds)})...")
                 app.logger.info(f"Extracted data from property with id {id_} in {name} ({state}/{len(vacasa_unitIds)})...")
             except Exception as e:
@@ -275,6 +276,25 @@ def home():
 
     return render_template('index.html')
 
+def scraping_task():
+    global log_messages
+    try:
+        log_messages.clear()
+        all_files = os.listdir("location_extracted_data")
+        if len(all_files) != 0:
+            for file in all_files:
+                file_path = os.path.join("location_extracted_data", file)
+                os.remove(file_path)
+    except Exception as e:
+        print(f"Error: {e}")
+
+    # Simulate scraping process
+    try:
+        process_data()
+        return jsonify({"message": "Scraping completed successfully."}), 200
+    except Exception as e:
+        print(f"Error during scraping: {e}")
+        return jsonify({"error": f"An error occurred during scraping:{e}"}), 500
 
 @app.route('/start-scraping', methods=['POST'])
 def start_scraping():
@@ -295,25 +315,7 @@ def start_scraping():
     if scraping_thread and scraping_thread.is_alive():
         return jsonify({"error": "Scraping is already in progress."}), 400
 
-    def scraping_task():
-        global log_messages
-        try:
-            log_messages.clear()
-            all_files = os.listdir("location_extracted_data")
-            if len(all_files) != 0:
-                for file in all_files:
-                    file_path = os.path.join("location_extracted_data", file)
-                    os.remove(file_path)
-        except Exception as e:
-            print(f"Error: {e}")
-
-        # Simulate scraping process
-        try:
-            process_data()
-            return jsonify({"message": "Scraping completed successfully."}), 200
-        except Exception as e:
-            print(f"Error during scraping: {e}")
-            return jsonify({"error": f"An error occurred during scraping:{e}"}), 500
+    
 
     stop_scraping.clear()  # Ensure the flag is reset
     scraping_thread = threading.Thread(target=scraping_task)
