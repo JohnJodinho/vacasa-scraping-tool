@@ -231,6 +231,7 @@ def process_data():
                 
                 lat, lng = get_coordinates(id_, all_lats_and_longs)
                 extract_property_data(id_, lat, lng, name)
+                
                 status = int((vacasa_unitIds.index(id_)+1)/len(vacasa_unitIds)*100)
                 custom_print(f"Extracted data from property with id {id_} in {name} ({state}/{len(vacasa_unitIds)})...")
                 app.logger.info(f"Extracted data from property with id {id_} in {name} ({state}/{len(vacasa_unitIds)})...")
@@ -296,7 +297,6 @@ def scraping_task():
         except Exception as e:
             print(f"Error during scraping: {e}")
             return jsonify({"error": f"An error occurred during scraping: {e}"}), 500
-
 @app.route('/start-scraping', methods=['POST'])
 def start_scraping():
     """
@@ -373,6 +373,7 @@ def download_file(file_type):
         return jsonify({"error": f"No {file_type} file found."}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 
 if __name__ == "__main__":
