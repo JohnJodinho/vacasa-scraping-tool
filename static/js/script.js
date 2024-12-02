@@ -29,31 +29,32 @@ document.getElementById('header-title').addEventListener('click', () => {
 });
 
 
-  document.getElementById('start-scraping').addEventListener('click', () => {
-    const url = document.getElementById('scraping-url').value;
-    clearLogsAndUrl()
-    if (!url) {
-      alert('Please enter a URL.');
-      return;
-    }
-  
-    fetch('/start-scraping', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ url }),
+document.getElementById('start-scraping').addEventListener('click', () => {
+  const url = document.getElementById('scraping-url').value;
+  clearLogsAndUrl()
+  if (!url) {
+    alert('Please enter a URL.');
+    return;
+  }
+
+  fetch('/start-scraping', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ url }),
+  })
+    .then(response => response.json())
+    .then(data => {
+      if (data.error) {
+        alert(`Error: ${data.error}`);
+      } else {
+        alert(data.message);
+      }
     })
-      .then(response => response.json())
-      .then(data => {
-        if (data.error) {
-          alert(`Error: ${data.error}`);
-        } else {
-          alert(data.message);
-        }
-      })
-      .catch(err => console.error('Error:', err));
-  });
+    .catch(err => console.error('Error:', err));
+});
+
   
 function updateProgressBar() {
   exportButtons = document.getElementById("export-buttons");
@@ -118,19 +119,24 @@ function downloadFile(fileType) {
   fetch(`/download-file/${fileType}`)
     .then(response => {
       if (!response.ok) throw new Error(`Failed to download ${fileType} file.`);
-      return response.blob();
+      const disposition = response.headers.get('Content-Disposition');
+      const filename = disposition 
+        ? disposition.split('filename=')[1].replace(/"/g, '') 
+        : `${fileType}_file.${fileType}`;
+      return response.blob().then(blob => ({ blob, filename }));
     })
-    .then(blob => {
+    .then(({ blob, filename }) => {
       // Create a temporary download link
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `${fileType}_file.${fileType}`;
+      link.download = filename;
       link.click();
       window.URL.revokeObjectURL(url);
     })
     .catch(err => console.error(err));
 }
+
 
 // Poll the server every 2 seconds
 setInterval(fetchLogs, 2000);
