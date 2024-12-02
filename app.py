@@ -69,9 +69,7 @@ def set_scraping_url(new_url):
     SCRAPING_URL = new_url
 
 # Search functionality
-def search_sitemap(filename="sitemap_data.json"):
-    with open(filename, "r") as f:
-        data = json.load(f)
+def search_sitemap():
 
     while True:
         full_url = SCRAPING_URL
