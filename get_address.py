@@ -3,7 +3,7 @@ from geopy.geocoders import Nominatim
 from geopy.extra.rate_limiter import RateLimiter
 import time
 import random
-from flags import stop_scraping
+
 import json
 from geopy.geocoders import AzureMaps
 import os
@@ -114,9 +114,6 @@ def get_address_from_coords(latitude, longitude, language="en"):
     default_value = ""
 
     while True:
-        if stop_scraping.is_set():
-            print("Scraping stopped during process!")
-            return  # Exit the task
         
         try:
             # Reverse geocode
@@ -154,3 +151,44 @@ def get_address_from_coords(latitude, longitude, language="en"):
             geolocator = AzureMaps(subscription_key=subscription_key, user_agent=user_agent)
             geocode = RateLimiter(geolocator.reverse, min_delay_seconds=2)
 
+
+
+
+def process_properties(file_path):
+    """
+    Process a JSON file to retrieve addresses for each property using Azure Maps.
+
+    Args:
+        file_path (str): Path to the JSON file containing property data.
+        subscription_key (str): Azure Maps subscription key.
+    """
+    # Load the JSON data
+    with open(file_path, 'r') as file:
+        properties = json.load(file)
+
+    # Loop through each property and process it
+    for property_data in properties:
+        unit_id = property_data.get("unit_id")
+        latitude = property_data.get("lat")
+        longitude = property_data.get("lng")
+
+        # Skip if latitude or longitude is missing
+        if latitude is None or longitude is None:
+            print(f"Skipping unit ID {unit_id}: Missing coordinates.")
+            continue
+
+        # Retrieve address
+        try:
+            address = get_address_from_coords(latitude, longitude)
+            if address:
+                print(f"Unit ID: {unit_id}\nAddress: {address}\n")
+            else:
+                print(f"Unit ID: {unit_id}\nAddress: No address found.\n")
+        except Exception as e:
+            print(f"Unit ID: {unit_id}\nError: {e}\n")
+
+# # Example usage
+# file_path = "lat_and_long2.json"  # Path to your JSON file
+
+
+# process_properties(file_path)
