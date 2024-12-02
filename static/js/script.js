@@ -31,6 +31,10 @@ document.getElementById('header-title').addEventListener('click', () => {
 
 document.getElementById('start-scraping').addEventListener('click', () => {
   const url = document.getElementById('scraping-url').value;
+  
+  const exportButtons = document.getElementById('export-buttons');
+  exportButtons.style.display = 'none';
+
   clearLogsAndUrl()
   if (!url) {
     alert('Please enter a URL.');
