@@ -43,6 +43,7 @@ log_messages = []
 scraping_thread = None
 SCRAPING_URL = ""
 can_delete = False
+state = 0
 
 
 data_directory = "location_extracted_data"  # Folder to store data files
@@ -151,6 +152,9 @@ def extract_unit_ids(max_retries=6):
     while retry_count < max_retries:
         try:
             with sync_playwright() as p:
+                if stop_scraping.is_set():
+                    custom_print("Scraping stopped by user.")
+                    return
                 # Launch the browser
                 browser = p.chromium.launch(headless=True)
                 context = browser.new_context()
@@ -194,6 +198,9 @@ def extract_unit_ids(max_retries=6):
         # print(f"Found {len(script_tags)} script tags.")
         for script_tag in script_tags:
             script_content = script_tag.string
+            if stop_scraping.is_set():
+                custom_print("Scraping stopped by user.")
+                return
             if script_content:  # Ensure the script has content
                 # Use regex to match 'SearchResults' and extract 'unit_ids'
                 search_results_match = re.search(
@@ -259,6 +266,9 @@ def extract_csrftoken_from_url(url, max_retries=5):
     """
     for _ in range(max_retries):
         try:
+            if stop_scraping.is_set():
+                custom_print("Scraping stopped by user.")
+                return
             # Initialize a session to persist cookies
             with requests.Session() as session:
                 # Make a GET request to the URL
@@ -325,7 +335,9 @@ def fetch_vacasa_data(payload, csrftoken, x_csrftoken, referer):
     
     max_retries = 5
     backoff_factor = 1
-
+    if stop_scraping.is_set():
+        custom_print("Scraping stopped by user.")
+        return
     def decode_response(content, encoding):
         # if encoding == "gzip":
         #     return gzip.decompress(content)
@@ -340,6 +352,9 @@ def fetch_vacasa_data(payload, csrftoken, x_csrftoken, referer):
 
     for attempt in range(max_retries):
         try:
+            if stop_scraping.is_set():
+                custom_print("Scraping stopped by user.")
+                return
             with sync_playwright() as p:
                 browser = p.chromium.launch(headless=True)
                 context = browser.new_context()
@@ -357,7 +372,9 @@ def fetch_vacasa_data(payload, csrftoken, x_csrftoken, referer):
                     decoded_content = decode_response(raw_content, encoding)
                     return json.loads(decoded_content.decode('utf-8'))
         except Exception as e:
-            
+            if stop_scraping.is_set():
+                custom_print("Scraping stopped by user.")
+                return
             time.sleep(backoff_factor * (2 ** attempt))  # Exponential backoff
             custom_print(f"Attempt {attempt + 1} failed: {e}")
         finally:
@@ -401,6 +418,9 @@ def process_pages(unit_ids):
     all_responses = []
     for ids in pages_ids:
         page_num = pages_ids.index(ids)
+        if stop_scraping.is_set():
+            custom_print("Scraping stopped by user.")
+            return
         payload = construct_payload(page_num, total_units, ids, slug, place)
         if page_num == 0:
             reference = SCRAPING_URL
@@ -437,7 +457,9 @@ def extract_property_data(the_unit, location_name):
         address = get_address_from_coords(lat, lng)
         
         property_data["ADDRESS"] = address
-
+    if stop_scraping.is_set():
+        custom_print("Scraping stopped by user.")
+        return
        
     # Load existing properties from the JSON file
     try:
@@ -457,7 +479,7 @@ def extract_property_data(the_unit, location_name):
 
 def process_data():
     """Handles the main data processing logic."""
-    global status, can_delete
+    global status, can_delete, state
     print("Not here")
     all_data = []
     vacasa_unitIds = extract_unit_ids()
@@ -469,6 +491,9 @@ def process_data():
     
     os.makedirs("location_extracted_data", exist_ok=True)
     # Load existing data if available
+    if stop_scraping.is_set():
+        custom_print("Scraping stopped by user.")
+        return
     try:
         with open(f"location_extracted_data/{name}_properties.json", "r") as f:
             all_data = json.load(f)
@@ -480,16 +505,29 @@ def process_data():
     else:
         state = 0
     for data in pages_data:
+        if stop_scraping.is_set():
+            custom_print("Scraping stopped by user.")
+            state = 0
+            return
         for unit in data["units"]:
+            if stop_scraping.is_set():
+                custom_print("Scraping stopped by user.")
+                state = 0
+                return
             is_new = True
             if all_data:
                 for dt in all_data:
+                    if stop_scraping.is_set():
+                        custom_print("Scraping stopped by user.")
+                        state = 0
+                        return
                     if dt["VACASA_LINK"] == f'https://www.vacasa.com/unit/{unit["unit_id"]}':
                         is_new = False
             if is_new:
                 try:
                     if stop_scraping.is_set():
                         custom_print("Scraping stopped during process!")
+                        state = 0
                         return  # Exit the task
                     
                     extract_property_data(unit, name)
@@ -519,34 +557,35 @@ def process_data():
 
 @app.route('/')
 def home():
-    """Renders the main scraping tool UI and stops any ongoing scraping."""
-    global log_messages, scraping_thread
+    global log_messages, scraping_thread, status
 
-    # Signal the thread to stop and wait for it to finish
+    # Signal the thread to stop
     if scraping_thread and scraping_thread.is_alive():
-        stop_scraping.set()  # Signal the thread to stop
+        stop_scraping.set()  # Signal to stop
+        scraping_thread.join()  # Wait for the thread to exit (optional for immediate control)
         scraping_thread = None
 
-    # Clear logs and files
-    loc_name = get_location_name()
+    # Reset logs and UI
+    
     delete_location_files()
     try:
         log_messages.clear()
     except Exception as e:
         print(f"Error during cleanup: {e}")
 
-    # Reset the stop flag for future scraping
+    # Reset stop flag
     stop_scraping.clear()
-
+    status = 0
     return render_template('index.html')
+
     
 
 def scraping_task():
     global log_messages
     with app.app_context():
         loc_name = get_location_name()
-        
         delete_location_files()
+
         try:
             log_messages.clear()
         except Exception as e:
@@ -554,22 +593,24 @@ def scraping_task():
 
         try:
             custom_print("Starting scraping...")
+
+            # Call the main process_data function
             process_data()
-           
-            return jsonify({"message": "Scraping completed successfully."}), 200
+
+            if stop_scraping.is_set():
+                custom_print("Scraping stopped by user.")
+            else:
+                custom_print("Scraping completed successfully.")
+
         except Exception as e:
             print(f"Error during scraping: {e}")
-            return jsonify({"error": f"An error occurred during scraping: {e}"}), 500
+
 
 
 @app.route('/start-scraping', methods=['POST'])
 def start_scraping():
-    """
-    API endpoint to trigger the scraping process.
-    Expects JSON data with a URL or location name.
-    """
-    global log_messages, scraping_thread
-
+    global log_messages, scraping_thread, status 
+    status = 0
     data = request.get_json()
     if not data or 'url' not in data:
         return jsonify({"error": "Invalid request. URL is required."}), 400
@@ -578,16 +619,17 @@ def start_scraping():
     print(f"Starting scraping for URL: {url}")
 
     set_scraping_url(url)
-    # Start a new scraping thread
+
+    # Ensure no active thread is running
     if scraping_thread and scraping_thread.is_alive():
         return jsonify({"error": "Scraping is already in progress."}), 400
 
-
-    stop_scraping.clear()  # Ensure the flag is reset
-    scraping_thread = threading.Thread(target=scraping_task)
+    stop_scraping.clear()  # Reset the flag for new scraping
+    scraping_thread = threading.Thread(target=scraping_task, daemon=True)
     scraping_thread.start()
 
     return jsonify({"message": "Scraping started."}), 200
+
 
 # @app.route('/stop-scraping', methods=['POST'])
 # def stop_prompt_scraping():
@@ -670,6 +712,8 @@ def download_file(file_type):
         return jsonify({"error": f"No {the_location} as {file_type} file found."}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
 
 
 if __name__ == "__main__":
